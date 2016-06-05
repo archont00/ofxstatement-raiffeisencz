@@ -13,9 +13,9 @@ class RaiffeisenCZPlugin(Plugin):
     """
 
     def get_parser(self, filename):
-        RaiffeisenCZPlugin.filename = filename
-        encoding = self.settings.get('charset', 'cp1250')
-        f = open(filename, "r", encoding=encoding)
+        RaiffeisenCZPlugin.csvfile = re.sub(".csv", "", filename) + "-fees-to-be-processed-separately.csv"
+        RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'cp1250')
+        f = open(filename, "r", encoding=RaiffeisenCZPlugin.encoding)
         parser = RaiffeisenCZParser(f)
         parser.statement.currency = self.settings.get('currency', 'CZK')
         parser.statement.bank_id = self.settings.get('bank', 'RZBCCZPP')
@@ -42,6 +42,10 @@ class RaiffeisenCZParser(CsvStatementParser):
 
     def parse_record(self, line):
         if self.cur_record == 1:
+            with open(RaiffeisenCZPlugin.csvfile, "w", encoding=RaiffeisenCZPlugin.encoding) as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerow(line)
+                output.close()
             return None
 
         if line[12] == '':
@@ -113,8 +117,7 @@ class RaiffeisenCZParser(CsvStatementParser):
                 #for y in range(len(exportline)):
                 #    exportline[y] = exportline[y]
 
-                csvfile = re.sub(".csv", "", RaiffeisenCZPlugin.filename) + "-fees-to-be-processed-separately.csv"
-                with open(csvfile, "a", encoding='cp1250') as output:
+                with open(RaiffeisenCZPlugin.csvfile, "a", encoding='cp1250') as output:
                     writer = csv.writer(output, lineterminator='\n')
                     writer.writerow(exportline)
 
