@@ -91,6 +91,8 @@ class RaiffeisenCZParser(CsvStatementParser):
         if line[7].startswith("Zpráva"):
             sl.trntype = "FEE"
 
+        sl.memo = sl.memo + "|NázÚČ: " + sl.payee + "|ÚČ: " + line[4] + "|VS: " + line[9] + "|KS: " + line[10] + "|SS: " + line[11]
+
         # Raiffeisen may show various fees on the same line  as the underlying transaction
         # For now, we simply create a new modified CSV file with the fee moved to line[12]
         # This needs to be processed again manually by 'ofxstatement convert -t raiffeisencz'
