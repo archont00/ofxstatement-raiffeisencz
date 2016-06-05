@@ -13,7 +13,7 @@ class RaiffeisenCZPlugin(Plugin):
     """
 
     def get_parser(self, filename):
-        RaiffeisenCZPlugin.csvfile = re.sub(".csv", "", filename) + "-fees-to-be-processed-separately.csv"
+        RaiffeisenCZPlugin.csvfile = re.sub(".csv", "", filename) + "-fees.csv"
         RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'cp1250')
         f = open(filename, "r", encoding=RaiffeisenCZPlugin.encoding)
         parser = RaiffeisenCZParser(f)
@@ -43,7 +43,7 @@ class RaiffeisenCZParser(CsvStatementParser):
     def parse_record(self, line):
         if self.cur_record == 1:
             with open(RaiffeisenCZPlugin.csvfile, "w", encoding=RaiffeisenCZPlugin.encoding) as output:
-                writer = csv.writer(output, lineterminator='\n')
+                writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                 writer.writerow(line)
                 output.close()
             return None
@@ -117,8 +117,8 @@ class RaiffeisenCZParser(CsvStatementParser):
                 #for y in range(len(exportline)):
                 #    exportline[y] = exportline[y]
 
-                with open(RaiffeisenCZPlugin.csvfile, "a", encoding='cp1250') as output:
-                    writer = csv.writer(output, lineterminator='\n')
+                with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
+                    writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                     writer.writerow(exportline)
 
             # ToDo: instead of exporting the above to CSV, try to add the exportline to
