@@ -110,8 +110,11 @@ class RaiffeisenCZParser(CsvStatementParser):
                 for y in range(13, 16):
                     exportline[y] = ''
 
+                #for y in range(len(exportline)):
+                #    exportline[y] = exportline[y]
+
                 csvfile = re.sub(".csv", "", RaiffeisenCZPlugin.filename) + "-fees-to-be-processed-separately.csv"
-                with open(csvfile, "a") as output:
+                with open(csvfile, "a", encoding='cp1250') as output:
                     writer = csv.writer(output, lineterminator='\n')
                     writer.writerow(exportline)
 
