@@ -9,12 +9,12 @@ version = "0.0.1"
 with open('README.rst') as f:
     long_description = f.read()
 
-setup(name='ofxstatement-sample',
+setup(name='ofxstatement-raiffeisencz',
       version=version,
-      author="Andrey Lebedev",
-      author_email="andrey@lebedev.lt",
-      url="https://github.com/kedder/ofxstatement",
-      description=("Sample plugin for ofxstatement"),
+      author="milankni",
+      author_email="milankni@gmail.com",
+      url="https://github.com/milankni/ofxstatement-raiffeisencz",
+      description=("Ofxstatement plugin for Raiffeisen Bank, a.s. - eKonto CSV history"),
       long_description=long_description,
       license="GPLv3",
       keywords=["ofx", "banking", "statement"],
@@ -32,7 +32,7 @@ setup(name='ofxstatement-sample',
       namespace_packages=["ofxstatement", "ofxstatement.plugins"],
       entry_points={
           'ofxstatement':
-          ['sample = ofxstatement.plugins.sample:SamplePlugin']
+          ['raiffeisencz = ofxstatement.plugins.raiffeisencz:RaiffeisenCZPlugin']
           },
       install_requires=['ofxstatement'],
       include_package_data=True,
