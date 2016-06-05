@@ -22,7 +22,6 @@ class RaiffeisenCZPlugin(Plugin):
         parser.statement.account_id = self.settings.get('account', '')
         parser.statement.account_type = self.settings.get('account_type', 'CHECKING')
         parser.statement.trntype = "OTHER"
-        # parser.swap_payee_and_memo = self.settings.get('swap-payee-and-memo', True)
         return parser
 
 
@@ -120,6 +119,9 @@ class RaiffeisenCZParser(CsvStatementParser):
 
             # ToDo: instead of exporting the above to CSV, try to add the exportline to
             #       the end of statement (from imported input.csv).
+
+        if line[12] == '0':
+            return None
 
         return sl
 
