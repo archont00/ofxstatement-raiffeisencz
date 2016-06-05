@@ -7,7 +7,8 @@ It is a plugin for `ofxstatement`_.
 .. _ofxstatement: https://github.com/kedder/ofxstatement
 
 Usage:
-    ofxstatement convert raiffeisencz bank-statement.csv bank-statement.qfx
+
+    ofxstatement convert -t raiffeisencz bank-statement.csv bank-statement.qfx
 
 
 ToDo:
