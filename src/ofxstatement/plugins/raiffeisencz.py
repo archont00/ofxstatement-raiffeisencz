@@ -94,7 +94,7 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         # Raiffeisen may show various fees on the same line  as the underlying transaction
         # For now, we simply create a new modified CSV file with the fee moved to line[12]
-        # This needs to be processed again manually by 'ofxstatement convert raiffeisencz'
+        # This needs to be processed again manually by 'ofxstatement convert -t raiffeisencz'
         for x in range(13, 16):
             # ToDo: re-use parse_float (how??)
             val1 = re.sub(",", ".", line[x])
@@ -113,9 +113,6 @@ class RaiffeisenCZParser(CsvStatementParser):
 
                 for y in range(13, 16):
                     exportline[y] = ''
-
-                #for y in range(len(exportline)):
-                #    exportline[y] = exportline[y]
 
                 with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
                     writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
