@@ -8,7 +8,20 @@ It is a plugin for `ofxstatement`_.
 
 Usage:
 
-    ofxstatement convert -t raiffeisencz bank-statement.csv bank-statement.qfx
+    ofxstatement convert -t raiffeisencz bank-statement.csv bank-statement.ofx
+    ofxstatement convert -t raiffeisencz:EUR bank-statement.csv bank-statement.ofx
+
+Configuration:
+
+    ofxstatement edit-config
+
+and set e.g. the following
+
+    [raiffeisencz:EUR]
+    plugin = raiffeisencz
+    currency = EUR
+    account = RB CA
+
 
 
 ToDo:
