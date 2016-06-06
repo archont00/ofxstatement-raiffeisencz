@@ -101,7 +101,10 @@ class RaiffeisenCZParser(CsvStatementParser):
             val1 = re.sub(",", ".", line[x])
             val1 = re.sub("[ a-zA-Z]", "", val1)
 
-            if float(val1) != 0:
+            # Additional fee to transaction: export the fee to a new CSV
+            # ToDo: instead of exporting the above to CSV, try to add the exportline to
+            #       the end of statement (from imported input.csv).
+            if float(val1) != 0 and sl.amount != 0:
                 exportline = line[:]
                 exportline[12] = line[x]
 
@@ -119,10 +122,13 @@ class RaiffeisenCZParser(CsvStatementParser):
                     writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                     writer.writerow(exportline)
 
-            # ToDo: instead of exporting the above to CSV, try to add the exportline to
-            #       the end of statement (from imported input.csv).
+            # Fee(s) is/are standalone, not related to transaction amount. Add it to amount field.only
+            # Most probably, there should not exist two standalone fees at once (possibly "Zpráva"?)
+            if float(val1) != 0 and sl.amount == 0:
+                sl.amount = sl.amount + float(val1)
 
-        if line[12] == '0':
+
+        if sl.amount == 0:
             return None
 
         return sl
