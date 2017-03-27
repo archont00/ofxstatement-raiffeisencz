@@ -26,25 +26,23 @@ class RaiffeisenCZPlugin(Plugin):
 
 
 class RaiffeisenCZParser(CsvStatementParser):
-
     # The columns are:
-    #  0 Poř. číslo
-    #  1 Datum
-    #  2 Čas
-    #  3 Poznámka
-    #  4 Název účtu
-    #  5 Číslo účtu
-    #  6 Datum odepsání
-    #  7 Valuta
-    #  8 Typ
-    #  9 Kód transakce
-    # 10 Variabilní symbol
-    # 11 Konstantní symbol
-    # 12 Specifický symbol
-    # 13 Částka
-    # 14 Poplatek
-    # 15 Směna
-    # 16 Zpráva
+    #  0 Datum
+    #  1 Čas
+    #  2 Poznámka
+    #  3 Název účtu
+    #  4 Číslo účtu
+    #  5 Datum odepsání
+    #  6 Valuta
+    #  7 Typ
+    #  8 Kód transakce
+    #  9 Variabilní symbol
+    # 10 Konstantní symbol
+    # 11 Specifický symbol
+    # 12 Částka
+    # 13 Poplatek
+    # 14 Směna
+    # 15 Zpráva
 
     mappings = {"date_user": 0,
                 "date": 5,
@@ -150,12 +148,10 @@ class RaiffeisenCZParser(CsvStatementParser):
             if float(val1) != 0 and sl.amount == 0:
                 sl.amount = sl.amount + float(val1)
 
-
         if sl.amount == 0:
             return None
 
         return sl
-
 
     def parse_float(self, value):
         value = re.sub(",", ".", value)
