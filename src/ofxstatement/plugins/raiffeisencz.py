@@ -5,11 +5,11 @@ import re
 from ofxstatement import statement
 from ofxstatement.parser import CsvStatementParser
 from ofxstatement.plugin import Plugin
-from ofxstatement.statement import Statement
+#from ofxstatement.statement import Statement
 
 
 class RaiffeisenCZPlugin(Plugin):
-    """RaiffeisenCZ plugin
+    """Raiffeisenbank, a.s. (Czech Republic) (CSV, cp1250)
     """
 
     def get_parser(self, filename):
