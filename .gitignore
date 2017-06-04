@@ -11,3 +11,4 @@ eggs
 .pydevproject
 *.sublime*
 .idea/workspace.xml
+.idea
