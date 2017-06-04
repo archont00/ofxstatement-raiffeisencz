@@ -13,7 +13,10 @@ class RaiffeisenCZPlugin(Plugin):
     """
 
     def get_parser(self, filename):
+        # .csvfile is a work-around and is used for exporting fees to a new CSV file
         RaiffeisenCZPlugin.csvfile = re.sub(".csv", "", filename) + "-fees.csv"
+
+        # Open input file and set some defaults
         RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'cp1250')
         f = open(filename, "r", encoding=RaiffeisenCZPlugin.encoding)
         parser = RaiffeisenCZParser(f)
@@ -59,10 +62,12 @@ class RaiffeisenCZParser(CsvStatementParser):
 
     def parse_record(self, line):
         if self.cur_record == 1:
+            # Create a heading line for the -fees.csv file
             with open(RaiffeisenCZPlugin.csvfile, "w", encoding=RaiffeisenCZPlugin.encoding) as output:
                 writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                 writer.writerow(line)
                 output.close()
+            # And skip further processing by parser
             return None
 
         if line[12] == '':
@@ -115,8 +120,9 @@ class RaiffeisenCZParser(CsvStatementParser):
         sl.memo = sl.memo + "|ÚČ: " + line[4] + "|VS: " + line[9] + "|KS: " + line[10] + "|SS: " + line[11]
 
         # Raiffeisen may show various fees on the same line  as the underlying transaction
-        # For now, we simply create a new modified CSV file with the fee moved to line[12]
-        # This needs to be processed again manually by 'ofxstatement convert -t raiffeisencz'
+        # For now, we simply create a new CSV file with the fee (and only the fee) moved to line[12].
+        # This needs to be processed again manually:
+        # $ ofxstatement convert -t raiffeisencz in-fees.csv out-fees.ofx
         for x in range(13, 16):
             # ToDo: re-use parse_float (how??)
             val1 = re.sub(",", ".", line[x])
@@ -143,7 +149,7 @@ class RaiffeisenCZParser(CsvStatementParser):
                     writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                     writer.writerow(exportline)
 
-            # Fee(s) is/are standalone, not related to transaction amount. Add it to amount field.only
+            # Some type of fee is standalone, not related to transaction amount. Add it to amount field.only
             # Most probably, there should not exist two standalone fees at once (possibly "Zpráva"?)
             if float(val1) != 0 and sl.amount == 0:
                 sl.amount = sl.amount + float(val1)
