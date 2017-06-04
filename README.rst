@@ -1,4 +1,4 @@
-This is a parser for CSV statements produced by Raiffeisen bank a.s.
+This is a parser for CSV statements produced by Raiffeisenbank, a.s.
 (Czech Republic) from within the report in Account History // Account
 Movements.
 
