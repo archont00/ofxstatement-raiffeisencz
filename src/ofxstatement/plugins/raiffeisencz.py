@@ -117,7 +117,14 @@ class RaiffeisenCZParser(CsvStatementParser):
         # sl.payee is imported as "Description" in GnuCash
         # sl.memo is imported as "Notes" in GnuCash
         # When sl.payee is empty, GnuCash imports sl.memo to "Description" and keeps "Notes" empty
-        sl.memo = sl.memo + "|ÚČ: " + line[4] + "|VS: " + line[9] + "|KS: " + line[10] + "|SS: " + line[11]
+        if not (line[4] == '' or line[4] == ' '):
+            sl.memo = sl.memo + "|ÚČ: " + line[4]
+        if not (line[9] == '' or line[9] == ' '):
+            sl.memo = sl.memo + "|VS: " + line[9]
+        if not (line[10] == '' or line[10] == ' '):
+            sl.memo = sl.memo + "|KS: " + line[10]
+        if not (line[11] == '' or line[11] == ' '):
+            sl.memo = sl.memo + "|SS: " + line[11]
 
         # Raiffeisen may show various fees on the same line  as the underlying transaction
         # For now, we simply create a new CSV file with the fee (and only the fee) moved to line[12].
