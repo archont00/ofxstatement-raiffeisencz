@@ -11,10 +11,10 @@ with open('README.rst') as f:
 
 setup(name='ofxstatement-raiffeisencz',
       version=version,
-      author="milankni",
+      author="Milan Knížek",
       author_email="milankni@gmail.com",
       url="https://github.com/milankni/ofxstatement-raiffeisencz",
-      description=("Ofxstatement plugin for Raiffeisen Bank, a.s. - eKonto CSV history"),
+      description=("Ofxstatement plugin for Raiffeisenbank a.s. (Czech Republic) - eKonto CSV history"),
       long_description=long_description,
       license="GPLv3",
       keywords=["ofx", "banking", "statement"],
