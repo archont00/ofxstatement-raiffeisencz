@@ -1,4 +1,5 @@
 #!/bin/bash
+LANG=en_US.utf-8
 
 # This is a wrapper for
 #   ofxstatement convert -t raiffeisencz input.csv output.ofx
@@ -28,23 +29,31 @@ if [[ ! -f "${1}" ]]; then
   exit 1
 fi
 
-inputf="$(basename ${1} .csv)"
-inputd="$(dirname ${1})"
+inputf="$(basename "${1}" .csv)"
+inputd="$(dirname "${1}")"
+
+
 
 # Run ofxstatement 
-ofxstatement convert -t raiffeisencz "${1}" "${inputd}/${inputf}.ofx" \
+ofxstatement convert -t raiffeisencz:CZK "${1}" "${inputd}/${inputf}.ofx" \
   || { echo "ofxstatement 1 failed."; exit 1; }
 
-
 tmpf="$(uuidgen)"
-cat "${inputd}/${inputf}.ofx" | xmllint --format - > "${inputd}/${tmpf}"
+cat "${inputd}/${inputf}.ofx" | xmllint --format - | recode html > "${inputd}/${tmpf}"
 mv "${inputd}/${tmpf}" "${inputd}/${inputf}.ofx"
 
 feesf="${inputd}/${inputf}-fees.csv"
 if [[ -f "${feesf}" ]]; then
   if [[ $(cat "${feesf}" | wc -l) -gt 1 ]]; then
-    ofxstatement convert -t raiffeisencz "${feesf}" "${feesf}.ofx" \
+    ofxstatement convert -t raiffeisencz:CZK "${feesf}" "${inputd}/${inputf}-fees.ofx" \
       || { echo "ofxstatement 2 failed."; exit 1; }
+    tmpf="$(uuidgen)"
+    cat "${inputd}/${feesf}.ofx" | xmllint --format - | recode html > "${inputd}/${tmpf}"
+    mv "${inputd}/${tmpf}" "${inputd}/${feesf}.ofx"
   fi
-  rm "${feesf}"
+  rm "${feesf}" "${inputd}/${inputf}-fees-fees.csv"
+  tmpf="$(uuidgen)"
+  cat "${inputd}/${inputf}-fees.ofx" | xmllint --format - > "${inputd}/${tmpf}"
+  mv "${inputd}/${tmpf}" "${inputd}/${inputf}-fees.ofx"
+
 fi
