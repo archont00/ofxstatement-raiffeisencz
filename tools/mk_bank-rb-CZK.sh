@@ -39,7 +39,7 @@ ofxstatement convert -t raiffeisencz:CZK "${1}" "${inputd}/${inputf}.ofx" \
   || { echo "ofxstatement 1 failed."; exit 1; }
 
 tmpf="$(uuidgen)"
-cat "${inputd}/${inputf}.ofx" | xmllint --format - | recode html > "${inputd}/${tmpf}"
+cat "${inputd}/${inputf}.ofx" | xmllint --format  --encode UTF-8 - > "${inputd}/${tmpf}"
 mv "${inputd}/${tmpf}" "${inputd}/${inputf}.ofx"
 
 feesf="${inputd}/${inputf}-fees.csv"
@@ -48,12 +48,12 @@ if [[ -f "${feesf}" ]]; then
     ofxstatement convert -t raiffeisencz:CZK "${feesf}" "${inputd}/${inputf}-fees.ofx" \
       || { echo "ofxstatement 2 failed."; exit 1; }
     tmpf="$(uuidgen)"
-    cat "${inputd}/${feesf}.ofx" | xmllint --format - | recode html > "${inputd}/${tmpf}"
+    cat "${inputd}/${feesf}.ofx" | xmllint --format --encode UTF-8 - > "${inputd}/${tmpf}"
     mv "${inputd}/${tmpf}" "${inputd}/${feesf}.ofx"
   fi
   rm "${feesf}" "${inputd}/${inputf}-fees-fees.csv"
   tmpf="$(uuidgen)"
-  cat "${inputd}/${inputf}-fees.ofx" | xmllint --format - > "${inputd}/${tmpf}"
+  cat "${inputd}/${inputf}-fees.ofx" | xmllint --format --encode UTF-8 - > "${inputd}/${tmpf}"
   mv "${inputd}/${tmpf}" "${inputd}/${inputf}-fees.ofx"
 
 fi
