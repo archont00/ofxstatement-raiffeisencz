@@ -114,9 +114,9 @@ class RaiffeisenCZParser(CsvStatementParser):
         if line[7].startswith("Zpráva"):
             sl.trntype = "FEE"
 
-        # sl.payee is imported as "Description" in GnuCash
-        # sl.memo is imported as "Notes" in GnuCash
-        # When sl.payee is empty, GnuCash imports sl.memo to "Description" and keeps "Notes" empty
+        # .payee becomes OFX.NAME which becomes "Description" in GnuCash
+        # .memo  becomes OFX.MEMO which becomes "Notes"       in GnuCash
+        # When payee is empty, GnuCash imports .memo to "Description" and keeps "Notes" empty
         if not (line[4] == '' or line[4] == ' '):
             sl.payee = sl.payee + "|ÚČ: " + line[4]
         if not (line[9] == '' or line[9] == ' '):
