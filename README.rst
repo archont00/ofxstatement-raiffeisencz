@@ -36,4 +36,4 @@ ToDo:
   suffix "-fees.csv") and the user must run ofxstatement with this
   file again to get another OFX file.
   See 'tools/mk_bank-rb.sh' for example of a shell script to automate
-  the process
+  the process.
