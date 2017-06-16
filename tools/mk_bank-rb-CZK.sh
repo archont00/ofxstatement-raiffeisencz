@@ -50,10 +50,10 @@ if [[ -f "${feesf}" ]]; then
     tmpf="$(uuidgen)"
     cat "${inputd}/${feesf}.ofx" | xmllint --format --encode UTF-8 - > "${inputd}/${tmpf}"
     mv "${inputd}/${tmpf}" "${inputd}/${feesf}.ofx"
+    tmpf="$(uuidgen)"
+    cat "${inputd}/${inputf}-fees.ofx" | xmllint --format --encode UTF-8 - > "${inputd}/${tmpf}"
+    mv "${inputd}/${tmpf}" "${inputd}/${inputf}-fees.ofx"
   fi
-  rm "${feesf}" "${inputd}/${inputf}-fees-fees.csv"
-  tmpf="$(uuidgen)"
-  cat "${inputd}/${inputf}-fees.ofx" | xmllint --format --encode UTF-8 - > "${inputd}/${tmpf}"
-  mv "${inputd}/${tmpf}" "${inputd}/${inputf}-fees.ofx"
+  rm "${feesf}"
 
 fi
