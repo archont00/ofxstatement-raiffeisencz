@@ -118,7 +118,7 @@ class RaiffeisenCZParser(CsvStatementParser):
         # sl.memo is imported as "Notes" in GnuCash
         # When sl.payee is empty, GnuCash imports sl.memo to "Description" and keeps "Notes" empty
         if not (line[4] == '' or line[4] == ' '):
-            sl.memo = sl.memo + "|ÚČ: " + line[4]
+            sl.payee = sl.payee + "|ÚČ: " + line[4]
         if not (line[9] == '' or line[9] == ' '):
             sl.memo = sl.memo + "|VS: " + line[9]
         if not (line[10] == '' or line[10] == ' '):
