@@ -12,3 +12,6 @@ eggs
 *.sublime*
 .idea/workspace.xml
 .idea
+go.sh
+*.csv
+*.ofx
