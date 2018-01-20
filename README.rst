@@ -30,7 +30,7 @@ and set e.g. the following
 
 ToDo:
 
-* There may be up to 3 types of fees shown on the same line of the
+* There is a separate column for fees on the same line of the
   statement as the underlying transaction. Currently this is not
   dealt with properly, instead a new CSV file is generated (with
   suffix "-fees.csv") and the user must run ofxstatement with this
