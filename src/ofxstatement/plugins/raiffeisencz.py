@@ -30,30 +30,33 @@ class RaiffeisenCZPlugin(Plugin):
 
 class RaiffeisenCZParser(CsvStatementParser):
     # The columns are:
-    #  0 Datum
-    #  1 Čas
-    #  2 Poznámka
+    #  0 Datum provedení
+    #  1 Datum zaúčtování
+    #  2 Číslo účtu
     #  3 Název účtu
-    #  4 Číslo účtu
-    #  5 Datum odepsání
-    #  6 Valuta
-    #  7 Typ
-    #  8 Kód transakce
-    #  9 Variabilní symbol
-    # 10 Konstantní symbol
-    # 11 Specifický symbol
-    # 12 Částka
-    # 13 Poplatek
-    # 14 Směna
-    # 15 Zpráva
+    #  4 Kategorie transakce
+    #  5 Číslo protiúčtu
+    #  6 Název protiúčtu
+    #  7 Typ transakce
+    #  8 Zpráva
+    #  9 Poznámka
+    # 10 Variabilní sym
+    # 11 Konstantní symbol
+    # 12 Specifický symbol
+    # 13 Zaúčtovaná částka
+    # 14 Měna účtu
+    # 15 Původní částka a měna
+    # 16 Původní částka a měna (2)
+    # 17 Poplatek
+    # 18 Id transakce
 
     mappings = {"date_user": 0,
-                "date": 5,
-                "memo": 2,
-                "payee": 3,
-                "amount": 12,
-                "check_no": 9,
-                "refnum": 8, }
+                "date": 1,
+                "memo": 9,
+                "payee": 6,
+                "amount": 13,
+                "check_no": 10,
+                "refnum": 18, }
 
     date_format = "%d.%m.%Y"
 
@@ -70,17 +73,11 @@ class RaiffeisenCZParser(CsvStatementParser):
             # And skip further processing by parser
             return None
 
-        if line[12] == '':
-            line[12] = "0"
-
         if line[13] == '':
             line[13] = "0"
 
-        if line[14] == '':
-            line[14] = "0"
-
-        if line[15] == '':
-            line[15] = "0"
+        if line[17] == '':
+            line[17] = "0"
 
         sl = super(RaiffeisenCZParser, self).parse_record(line)
         sl.date_user = datetime.strptime(sl.date_user, self.date_format)
@@ -89,83 +86,83 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         if line[7].startswith("Převod"):
             sl.trntype = "XFER"
-        if line[7].startswith("Příchozí platba"):
+        elif line[7].startswith("Platba"):
+            sl.trntype = "XFER"
+        elif line[7].startswith("Jednorázová platba"):
+            sl.trntype = "XFER"
+        elif line[7].startswith("Příchozí platba"):
             sl.trntype = "CREDIT"
-        if line[7].startswith("Trvalý převod"):
+        elif line[7].startswith("Trvalý převod"):
             sl.trntype = "REPEATPMT"
-        if line[7].startswith("Kladný úrok"):
+        elif line[7].startswith("Trvalá platba"):
+            sl.trntype = "REPEATPMT"
+        elif line[7].startswith("Kladný úrok"):
             sl.trntype = "INT"
-        if line[7].startswith("Záporný úrok"):
+        elif line[7].startswith("Záporný úrok"):
             sl.trntype = "INT"
-        if line[7].startswith("Inkaso"):
+        elif line[7].startswith("Inkaso"):
             sl.trntype = "DIRECTDEBIT"
-        if line[7].startswith("Srážka daně"):
+        elif line[7].startswith("Srážka daně"):
             sl.trntype = "DEBIT"
-        if line[7].startswith("Správa účtu"):
+        elif line[7].startswith("Daň z úroků"):
+            sl.trntype = "DEBIT"
+        elif line[7].startswith("Správa účtu"):
             sl.trntype = "FEE"
-        if line[7].startswith("Jiný trans."):
+        elif line[7].startswith("Jiný trans."):
             sl.trntype = "FEE"
-        if line[7].startswith("Správa účtu"):
+        elif line[7].startswith("Správa účtu"):
             sl.trntype = "FEE"
-        if line[7].startswith("Poplatek"):
+        elif line[7].startswith("Poplatek"):
             sl.trntype = "FEE"
-        if line[7].startswith("Směna"):
+        elif line[7].startswith("Směna"):
             sl.trntype = "FEE"
-        if line[7].startswith("Zpráva"):
+        elif line[7].startswith("Zpráva"):
             sl.trntype = "FEE"
 
         # .payee becomes OFX.NAME which becomes "Description" in GnuCash
         # .memo  becomes OFX.MEMO which becomes "Notes"       in GnuCash
         # When payee is empty, GnuCash imports .memo to "Description" and keeps "Notes" empty
-        if not (line[4] == '' or line[4] == ' '):
-            sl.payee = sl.payee + "|ÚČ: " + line[4]
-        if not (line[9] == '' or line[9] == ' '):
-            sl.memo = sl.memo + "|VS: " + line[9]
+        if not (line[6] == '' or line[6] == ' '):
+            sl.payee = sl.payee + "|ÚČ: " + line[6]
         if not (line[10] == '' or line[10] == ' '):
-            sl.memo = sl.memo + "|KS: " + line[10]
+            sl.memo = sl.memo + "|VS: " + line[10]
         if not (line[11] == '' or line[11] == ' '):
-            sl.memo = sl.memo + "|SS: " + line[11]
+            sl.memo = sl.memo + "|KS: " + line[11]
+        if not (line[12] == '' or line[12] == ' '):
+            sl.memo = sl.memo + "|SS: " + line[12]
 
         # Raiffeisen may show various fees on the same line  as the underlying transaction
-        # For now, we simply create a new CSV file with the fee (and only the fee) moved to line[12].
+        # For now, we simply create a new CSV file with the fee amount moved to line[13].
         # This needs to be processed again manually:
         # $ ofxstatement convert -t raiffeisencz in-fees.csv out-fees.ofx
-        for x in range(13, 16):
-            # ToDo: re-use parse_float (how??)
-            val1 = re.sub(",", ".", line[x])
-            val1 = re.sub("[ a-zA-Z]", "", val1)
 
-            # Additional fee to transaction: export the fee to a new CSV
-            # ToDo: instead of exporting the above to CSV, try to add the exportline to
-            #       the end of statement (from imported input.csv).
-            if float(val1) != 0 and sl.amount != 0:
-                exportline = line[:]
-                exportline[12] = line[x]
+        # It may include thousands separators
+        # ToDo: re-use parse_float (how??)
+        line[17] = re.sub(",", ".", line[17])
+        line[17] = re.sub("[ a-zA-Z]", "", line[17])
 
-                if x == 13:
-                    exportline[7] = "Poplatek"
-                if x == 14:
-                    exportline[7] = "Směna"
-                if x == 15:
-                    exportline[7] = "Zpráva"
+        # No need to duplicate a line if sl.amount is zero and only a fee exists
+        if float(line[17]) != 0 and sl.amount == 0:
+            sl.amount = float(line[17])
 
-                for y in range(13, 16):
-                    exportline[y] = ''
+        # Duplicate the current line and replace amount [13] with the fee amount [17]
+        if float(line[17]) != 0 and sl.amount != 0:
+            exportline = line[:]
+            exportline[13] = line[17]
+            exportline[17] = ''
+            exportline[7] = "Poplatek"
+            exportline[9] = "Poplatek" + exportline[9]
 
-                with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
-                    writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
-                    writer.writerow(exportline)
-
-            # Some type of fee is standalone, not related to transaction amount. Add it to amount field.only
-            # Most probably, there should not exist two standalone fees at once (possibly "Zpráva"?)
-            if float(val1) != 0 and sl.amount == 0:
-                sl.amount = sl.amount + float(val1)
+            with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
+                writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
+                writer.writerow(exportline)
 
         if sl.amount == 0:
             return None
 
         return sl
 
+    # The exported numbers may include some non-numerical chars, remove them.
     def parse_float(self, value):
         value = re.sub(",", ".", value)
         value = re.sub("[ a-zA-Z]", "", value)
