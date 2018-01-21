@@ -13,9 +13,6 @@ class RaiffeisenCZPlugin(Plugin):
     """
 
     def get_parser(self, filename):
-        # .csvfile is a work-around and is used for exporting fees to a new CSV file
-        RaiffeisenCZPlugin.csvfile = re.sub(".csv", "", filename) + "-fees.csv"
-
         # Open input file and set some defaults
         RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'cp1250')
         f = open(filename, "r", encoding=RaiffeisenCZPlugin.encoding)
@@ -31,39 +28,10 @@ class RaiffeisenCZPlugin(Plugin):
 class RaiffeisenCZParser(CsvStatementParser):
     date_format = "%d.%m.%Y"
 
-    # The columns are:
-    #  0 Datum provedení
-    #  1 Datum zaúčtování
-    #  2 Číslo účtu
-    #  3 Název účtu
-    #  4 Kategorie transakce
-    #  5 Číslo protiúčtu
-    #  6 Název protiúčtu
-    #  7 Typ transakce
-    #  8 Zpráva
-    #  9 Poznámka
-    # 10 Variabilní sym
-    # 11 Konstantní symbol
-    # 12 Specifický symbol
-    # 13 Zaúčtovaná částka
-    # 14 Měna účtu
-    # 15 Původní částka a měna
-    # 16 Původní částka a měna (2)
-    # 17 Poplatek
-    # 18 Id transakce
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
         self.columns = None
         self.mappings = None
-
-    mappings = {"date_user": 0,
-                "date": 1,
-                "memo": 9,
-                "payee": 6,
-                "amount": 13,
-                "check_no": 10,
-                "refnum": 18, }
 
     def split_records(self):
         return csv.reader(self.fin, delimiter=';', quotechar='"')
@@ -74,12 +42,6 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         # First line of CSV file contains headers, not an actual transaction
         if self.cur_record == 1:
-            # Create a heading line for the -fees.csv file
-            with open(RaiffeisenCZPlugin.csvfile, "w", encoding=RaiffeisenCZPlugin.encoding) as output:
-                writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
-                writer.writerow(line)
-                output.close()
-
             # Prepare columns headers lookup table for parsing
             # v ... column heading
             # i ... column index (expected by .mappings)
@@ -167,38 +129,38 @@ class RaiffeisenCZParser(CsvStatementParser):
         if line[columns["SS"]] != "":
             StatementLine.memo = StatementLine.memo + "|SS: " + line[columns["SS"]]
 
-        # Raiffeisen may show various fees on the same line  as the underlying transaction
-        # For now, we simply create a new CSV file with the fee amount moved to line[13].
-        # This needs to be processed again manually:
-        # $ ofxstatement convert -t raiffeisencz in-fees.csv out-fees.ofx
+        # Raiffeisen may show various fees on the same line as the underlying transaction.
+        # In case there is a fee connected with the transaction, the fee is added as different transaction
 
         # It may include thousands separators
         # ToDo: re-use parse_float (how??)
         line[columns["Poplatek"]] = re.sub(",", ".", line[columns["Poplatek"]])
         line[columns["Poplatek"]] = re.sub("[ a-zA-Z]", "", line[columns["Poplatek"]])
 
-        # No need to duplicate a line if StatementLine.amount is zero and only a fee exists
+        # Some type of fee is standalone, not related to transaction amount. Add it to amount field only
         if float(line[columns["Poplatek"]]) != 0 and StatementLine.amount == 0:
             StatementLine.amount = float(line[columns["Poplatek"]])
 
-        # Duplicate the current line and replace amount [13] with the fee amount [17]
-        if float(line[columns["Poplatek"]]) != 0 and StatementLine.amount != 0:
-            exportline = line[:]
-            exportline[columns["Zaúčtovaná částka"]] = line[columns["Poplatek"]]
-            exportline[columns["Poplatek"]] = ''
-            exportline[columns["Typ transakce"]] = "Poplatek"
-            exportline[columns["Poznámka"]] = "Poplatek: " + exportline[columns["Poznámka"]]
+        # Duplicate the current line and replace .amount with the fee amount ["Poplatek"]
+        elif float(line[columns["Poplatek"]]) != 0 and StatementLine.amount != 0:
+            fee_line = line[:]
+            fee_line[columns["Zaúčtovaná částka"]] = line[columns["Poplatek"]]
+            fee_line[columns["Poplatek"]] = ""
+            fee_line[columns["Typ transakce"]] = "Poplatek"
+            fee_line[columns["Poznámka"]] = "Poplatek: " + fee_line[columns["Poznámka"]]
 
-            with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
-                writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
-                writer.writerow(exportline)
+            # Parse the newly generated fee_line and append it to the rest of the statements
+            stmt_line = self.parse_record(fee_line)
+            if stmt_line:
+                stmt_line.assert_valid()
+                self.statement.lines.append(stmt_line)
 
         if StatementLine.amount == 0:
             return None
 
         return StatementLine
 
-    # The exported numbers may include some non-numerical chars, remove them.
+    # The numbers in CSV may include some non-numerical chars, remove them.
     def parse_float(self, value):
         value = re.sub(",", ".", value)
         value = re.sub("[ a-zA-Z]", "", value)
