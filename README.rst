@@ -26,14 +26,3 @@ and set e.g. the following
 
     account = RB CA
 
-
-
-ToDo:
-
-* There is a separate column for fees on the same line of the
-  statement as the underlying transaction. Currently this is not
-  dealt with properly, instead a new CSV file is generated (with
-  suffix "-fees.csv") and the user must run ofxstatement with this
-  file again to get another OFX file.
-  See 'tools/mk_bank-rb.sh' for example of a shell script to automate
-  the process.
