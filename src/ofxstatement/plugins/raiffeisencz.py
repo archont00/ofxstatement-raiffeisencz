@@ -29,6 +29,8 @@ class RaiffeisenCZPlugin(Plugin):
 
 
 class RaiffeisenCZParser(CsvStatementParser):
+    date_format = "%d.%m.%Y"
+
     # The columns are:
     #  0 Datum provedení
     #  1 Datum zaúčtování
@@ -50,6 +52,11 @@ class RaiffeisenCZParser(CsvStatementParser):
     # 17 Poplatek
     # 18 Id transakce
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, *kwargs)
+        self.columns = None
+        self.mappings = None
+
     mappings = {"date_user": 0,
                 "date": 1,
                 "memo": 9,
@@ -58,78 +65,107 @@ class RaiffeisenCZParser(CsvStatementParser):
                 "check_no": 10,
                 "refnum": 18, }
 
-    date_format = "%d.%m.%Y"
-
     def split_records(self):
         return csv.reader(self.fin, delimiter=';', quotechar='"')
 
     def parse_record(self, line):
+        """Parse given transaction line and return StatementLine object
+        """
+
+        # First line of CSV file contains headers, not an actual transaction
         if self.cur_record == 1:
             # Create a heading line for the -fees.csv file
             with open(RaiffeisenCZPlugin.csvfile, "w", encoding=RaiffeisenCZPlugin.encoding) as output:
                 writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                 writer.writerow(line)
                 output.close()
+
+            # Prepare columns headers lookup table for parsing
+            # v ... column heading
+            # i ... column index (expected by .mappings)
+            self.columns = {v: i for i,v in enumerate(line)}
+            self.mappings = {
+                "date":      self.columns['Datum zaúčtování'],
+                "date_user": self.columns['Datum provedení'],
+                "memo":      self.columns['Poznámka'],
+                "payee":     self.columns['Název protiúčtu'],
+                "amount":    self.columns['Zaúčtovaná částka'],
+                "check_no":  self.columns['VS'],
+                "refnum":    self.columns['Id transakce'],
+            }
+
             # And skip further processing by parser
             return None
 
-        if line[13] == '':
-            line[13] = "0"
+        # Shortcut
+        columns = self.columns
 
-        if line[17] == '':
-            line[17] = "0"
+        # Normalize string
+        for i,v in enumerate(line):
+            line[i] = v.strip()
 
-        sl = super(RaiffeisenCZParser, self).parse_record(line)
-        sl.date_user = datetime.strptime(sl.date_user, self.date_format)
+        if line[columns["Zaúčtovaná částka"]] == "":
+            line[columns["Zaúčtovaná částka"]] = "0"
 
-        sl.id = statement.generate_transaction_id(sl)
+        if line[columns["Poplatek"]] == "":
+            line[columns["Poplatek"]] = "0"
 
-        if line[7].startswith("Převod"):
-            sl.trntype = "XFER"
-        elif line[7].startswith("Platba"):
-            sl.trntype = "XFER"
-        elif line[7].startswith("Jednorázová platba"):
-            sl.trntype = "XFER"
-        elif line[7].startswith("Příchozí platba"):
-            sl.trntype = "CREDIT"
-        elif line[7].startswith("Trvalý převod"):
-            sl.trntype = "REPEATPMT"
-        elif line[7].startswith("Trvalá platba"):
-            sl.trntype = "REPEATPMT"
-        elif line[7].startswith("Kladný úrok"):
-            sl.trntype = "INT"
-        elif line[7].startswith("Záporný úrok"):
-            sl.trntype = "INT"
-        elif line[7].startswith("Inkaso"):
-            sl.trntype = "DIRECTDEBIT"
-        elif line[7].startswith("Srážka daně"):
-            sl.trntype = "DEBIT"
-        elif line[7].startswith("Daň z úroků"):
-            sl.trntype = "DEBIT"
-        elif line[7].startswith("Správa účtu"):
-            sl.trntype = "FEE"
-        elif line[7].startswith("Jiný trans."):
-            sl.trntype = "FEE"
-        elif line[7].startswith("Správa účtu"):
-            sl.trntype = "FEE"
-        elif line[7].startswith("Poplatek"):
-            sl.trntype = "FEE"
-        elif line[7].startswith("Směna"):
-            sl.trntype = "FEE"
-        elif line[7].startswith("Zpráva"):
-            sl.trntype = "FEE"
+        StatementLine = super(RaiffeisenCZParser, self).parse_record(line)
+
+        StatementLine.date_user = datetime.strptime(StatementLine.date_user, self.date_format)
+
+        StatementLine.id = statement.generate_transaction_id(StatementLine)
+
+        if   line[columns["Typ transakce"]].startswith("Převod"):
+            StatementLine.trntype = "XFER"
+        elif line[columns["Typ transakce"]].startswith("Platba"):
+            StatementLine.trntype = "XFER"
+        elif line[columns["Typ transakce"]].startswith("Jednorázová platba"):
+            StatementLine.trntype = "XFER"
+        elif line[columns["Typ transakce"]].startswith("Příchozí platba"):
+            StatementLine.trntype = "CREDIT"
+        elif line[columns["Typ transakce"]].startswith("Trvalý převod"):
+            StatementLine.trntype = "REPEATPMT"
+        elif line[columns["Typ transakce"]].startswith("Trvalá platba"):
+            StatementLine.trntype = "REPEATPMT"
+        elif line[columns["Typ transakce"]].startswith("Kladný úrok"):
+            StatementLine.trntype = "INT"
+        elif line[columns["Typ transakce"]].startswith("Záporný úrok"):
+            StatementLine.trntype = "INT"
+        elif line[columns["Typ transakce"]].startswith("Inkaso"):
+            StatementLine.trntype = "DIRECTDEBIT"
+        elif line[columns["Typ transakce"]].startswith("Srážka daně"):
+            StatementLine.trntype = "DEBIT"
+        elif line[columns["Typ transakce"]].startswith("Daň z úroků"):
+            StatementLine.trntype = "DEBIT"
+        elif line[columns["Typ transakce"]].startswith("Správa účtu"):
+            StatementLine.trntype = "FEE"
+        elif line[columns["Typ transakce"]].startswith("Jiný trans."):
+            StatementLine.trntype = "FEE"
+        elif line[columns["Typ transakce"]].startswith("Správa účtu"):
+            StatementLine.trntype = "FEE"
+        elif line[columns["Typ transakce"]].startswith("Poplatek"):
+            StatementLine.trntype = "FEE"
+        elif line[columns["Typ transakce"]].startswith("Směna"):
+            StatementLine.trntype = "FEE"
+        elif line[columns["Typ transakce"]].startswith("Zpráva"):
+            StatementLine.trntype = "FEE"
 
         # .payee becomes OFX.NAME which becomes "Description" in GnuCash
         # .memo  becomes OFX.MEMO which becomes "Notes"       in GnuCash
         # When payee is empty, GnuCash imports .memo to "Description" and keeps "Notes" empty
-        if not (line[6] == '' or line[6] == ' '):
-            sl.payee = sl.payee + "|ÚČ: " + line[6]
-        if not (line[10] == '' or line[10] == ' '):
-            sl.memo = sl.memo + "|VS: " + line[10]
-        if not (line[11] == '' or line[11] == ' '):
-            sl.memo = sl.memo + "|KS: " + line[11]
-        if not (line[12] == '' or line[12] == ' '):
-            sl.memo = sl.memo + "|SS: " + line[12]
+
+        # Add payee's account number to payee field
+        if line[columns["Číslo protiúčtu"]] != "":
+            StatementLine.payee = StatementLine.payee + "|ÚČ: " + line[columns["Číslo protiúčtu"]]
+
+        # Add payment symbols to memo field
+        if line[columns["VS"]] != "":
+            StatementLine.memo = StatementLine.memo + "|VS: " + line[columns["VS"]]
+        if line[columns["KS"]] != "":
+            StatementLine.memo = StatementLine.memo + "|KS: " + line[columns["KS"]]
+        if line[columns["SS"]] != "":
+            StatementLine.memo = StatementLine.memo + "|SS: " + line[columns["SS"]]
 
         # Raiffeisen may show various fees on the same line  as the underlying transaction
         # For now, we simply create a new CSV file with the fee amount moved to line[13].
@@ -138,29 +174,29 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         # It may include thousands separators
         # ToDo: re-use parse_float (how??)
-        line[17] = re.sub(",", ".", line[17])
-        line[17] = re.sub("[ a-zA-Z]", "", line[17])
+        line[columns["Poplatek"]] = re.sub(",", ".", line[columns["Poplatek"]])
+        line[columns["Poplatek"]] = re.sub("[ a-zA-Z]", "", line[columns["Poplatek"]])
 
-        # No need to duplicate a line if sl.amount is zero and only a fee exists
-        if float(line[17]) != 0 and sl.amount == 0:
-            sl.amount = float(line[17])
+        # No need to duplicate a line if StatementLine.amount is zero and only a fee exists
+        if float(line[columns["Poplatek"]]) != 0 and StatementLine.amount == 0:
+            StatementLine.amount = float(line[columns["Poplatek"]])
 
         # Duplicate the current line and replace amount [13] with the fee amount [17]
-        if float(line[17]) != 0 and sl.amount != 0:
+        if float(line[columns["Poplatek"]]) != 0 and StatementLine.amount != 0:
             exportline = line[:]
-            exportline[13] = line[17]
-            exportline[17] = ''
-            exportline[7] = "Poplatek"
-            exportline[9] = "Poplatek" + exportline[9]
+            exportline[columns["Zaúčtovaná částka"]] = line[columns["Poplatek"]]
+            exportline[columns["Poplatek"]] = ''
+            exportline[columns["Typ transakce"]] = "Poplatek"
+            exportline[columns["Poznámka"]] = "Poplatek: " + exportline[columns["Poznámka"]]
 
             with open(RaiffeisenCZPlugin.csvfile, "a", encoding=RaiffeisenCZPlugin.encoding) as output:
                 writer = csv.writer(output, lineterminator='\n', delimiter=';', quotechar='"')
                 writer.writerow(exportline)
 
-        if sl.amount == 0:
+        if StatementLine.amount == 0:
             return None
 
-        return sl
+        return StatementLine
 
     # The exported numbers may include some non-numerical chars, remove them.
     def parse_float(self, value):
