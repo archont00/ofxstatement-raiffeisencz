@@ -6,23 +6,25 @@ It is a plugin for `ofxstatement`_.
 
 .. _ofxstatement: https://github.com/kedder/ofxstatement
 
-Usage:
+Usage
+=====
+::
+  $ ofxstatement convert -t raiffeisencz bank-statement.csv bank-statement.ofx
+  $ ofxstatement convert -t raiffeisencz:EUR bank-statement.csv bank-statement.ofx
 
-    ofxstatement convert -t raiffeisencz bank-statement.csv bank-statement.ofx
+Configuration
+=============
+To edit the configuration file run::
+  $ ofxstatement edit-config
 
-    ofxstatement convert -t raiffeisencz:EUR bank-statement.csv bank-statement.ofx
+and set e.g. the following::
 
-Configuration:
+  [raiffeisencz]
+  plugin = raiffeisencz
+  currency = CZK
+  account = RB CA
 
-    ofxstatement edit-config
-
-and set e.g. the following
-
-    [raiffeisencz:EUR]
-
-    plugin = raiffeisencz
-
-    currency = EUR
-
-    account = RB CA
-
+  [raiffeisencz:EUR]
+  plugin = raiffeisencz
+  currency = EUR
+  account = RB CA EUR
