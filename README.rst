@@ -17,6 +17,7 @@ Configuration
 =============
 
 To edit the configuration file run::
+
   $ ofxstatement edit-config
 
 and set e.g. the following::
