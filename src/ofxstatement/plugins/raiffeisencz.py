@@ -26,7 +26,8 @@ class RaiffeisenCZPlugin(Plugin):
 
 
 class RaiffeisenCZParser(CsvStatementParser):
-    date_format = "%d.%m.%Y"
+    date_format = "%d.%m.%Y %H:%M"
+    date_format_user = "%d.%m.%Y"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
@@ -74,7 +75,7 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         StatementLine = super(RaiffeisenCZParser, self).parse_record(line)
 
-        StatementLine.date_user = datetime.strptime(StatementLine.date_user, self.date_format)
+        StatementLine.date_user = datetime.strptime(StatementLine.date_user, self.date_format_user)
 
         StatementLine.id = statement.generate_transaction_id(StatementLine)
 
