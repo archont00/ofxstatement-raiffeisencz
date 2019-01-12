@@ -50,7 +50,7 @@ class RaiffeisenCZParser(CsvStatementParser):
             self.mappings = {
                 "date":      self.columns['Datum zaúčtování'],
                 "date_user": self.columns['Datum provedení'],
-                "memo":      self.columns['Poznámka'],
+                "memo":      self.columns['Zpráva'],
                 "payee":     self.columns['Název protiúčtu'],
                 "amount":    self.columns['Zaúčtovaná částka'],
                 "check_no":  self.columns['VS'],
@@ -148,7 +148,7 @@ class RaiffeisenCZParser(CsvStatementParser):
             fee_line[columns["Zaúčtovaná částka"]] = line[columns["Poplatek"]]
             fee_line[columns["Poplatek"]] = ""
             fee_line[columns["Typ transakce"]] = "Poplatek"
-            fee_line[columns["Poznámka"]] = "Poplatek: " + fee_line[columns["Poznámka"]]
+            fee_line[columns["Zpráva"]] = "Poplatek: " + fee_line[columns["Zpráva"]]
 
             # Parse the newly generated fee_line and append it to the rest of the statements
             stmt_line = self.parse_record(fee_line)
