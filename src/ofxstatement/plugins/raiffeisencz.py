@@ -26,6 +26,30 @@ class RaiffeisenCZPlugin(Plugin):
 
 
 class RaiffeisenCZParser(CsvStatementParser):
+
+    # GnuCash recognises the following descriptive fields:
+    # - Header for Transaction Journal:
+    #   - Description
+    #   - Notes
+    # - Line item memo for each account in a single Transaction Journal:
+    #   - Memo
+    #
+    # .payee is assigned to "Description" in GnuCash
+    # .memo is assigned to "Memo" in GnuCash and also concatenated
+    #       to "Notes" after "OFX ext. info" and "Trans type"
+    #
+    # When .payee is empty, GnuCash assigns .memo to:
+    # - "Description" and does not concatenate to "Notes"
+    # - "Memo"
+    #
+    # Although ofxstatement can create bank_account_to, GnuCash ignores it.
+    #
+    # In GnuCash, .check_no (if empty, then .refnum) is assigned to "Num".
+    #
+    # The approach is:
+    # - merge counterparty name (.payee) + account number + bank code
+    # - merge pmt reference (.memo) + other payment specifics (VS, KS, SS)
+
     date_format = "%d.%m.%Y %H:%M"
     date_format_user = "%d.%m.%Y"
 
@@ -47,6 +71,8 @@ class RaiffeisenCZParser(CsvStatementParser):
             # v ... column heading
             # i ... column index (expected by .mappings)
             self.columns = {v: i for i,v in enumerate(line)}
+            # .date_user cannot be parsed by super().parse_record(line)
+            # because of different date_format_user
             self.mappings = {
                 "date":      self.columns['Datum zaúčtování'],
                 "memo":      self.columns['Zpráva'],
@@ -76,7 +102,6 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         StatementLine.id = statement.generate_transaction_id(StatementLine)
 
-        # .date_user cannot be parsed by super().parse_record(line) because of different date_format_user
         if not line[columns["Datum provedení"]] == "":
             StatementLine.date_user = datetime.strptime(line[columns["Datum provedení"]], self.date_format_user)
 
@@ -115,21 +140,23 @@ class RaiffeisenCZParser(CsvStatementParser):
         elif line[columns["Typ transakce"]].startswith("Zpráva"):
             StatementLine.trntype = "FEE"
 
-        # .payee becomes OFX.NAME which becomes "Description" in GnuCash
-        # .memo  becomes OFX.MEMO which becomes "Notes"       in GnuCash
-        # When payee is empty, GnuCash imports .memo to "Description" and keeps "Notes" empty
-
         # Add payee's account number to payee field
-        if line[columns["Číslo protiúčtu"]] != "":
-            StatementLine.payee = StatementLine.payee + "|ÚČ: " + line[columns["Číslo protiúčtu"]]
+        StatementLine.payee = StatementLine.payee + "|" + line[columns["Číslo protiúčtu"]]
+        StatementLine.payee = StatementLine.payee.strip("|")
 
         # Add payment symbols to memo field
+        if line[columns["Poznámka"]] != "" and line[columns["Poznámka"]] != StatementLine.memo:
+            StatementLine.memo = StatementLine.memo + ", " + line[columns["Poznámka"]]
+            StatementLine.memo = StatementLine.memo.strip(", ")
+
         if line[columns["VS"]] != "":
-            StatementLine.memo = StatementLine.memo + "|VS: " + line[columns["VS"]]
+            StatementLine.memo = StatementLine.memo + "|VS:" + line[columns["VS"]]
         if line[columns["KS"]] != "":
-            StatementLine.memo = StatementLine.memo + "|KS: " + line[columns["KS"]]
+            StatementLine.memo = StatementLine.memo + "|KS:" + line[columns["KS"]]
         if line[columns["SS"]] != "":
-            StatementLine.memo = StatementLine.memo + "|SS: " + line[columns["SS"]]
+            StatementLine.memo = StatementLine.memo + "|SS:" + line[columns["SS"]]
+
+        StatementLine.memo = StatementLine.memo.strip("|")
 
         # Raiffeisen may show various fees on the same line as the underlying transaction.
         # In case there is a fee connected with the transaction, the fee is added as different transaction
