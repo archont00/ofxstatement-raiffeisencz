@@ -49,7 +49,6 @@ class RaiffeisenCZParser(CsvStatementParser):
             self.columns = {v: i for i,v in enumerate(line)}
             self.mappings = {
                 "date":      self.columns['Datum zaúčtování'],
-                "date_user": self.columns['Datum provedení'],
                 "memo":      self.columns['Zpráva'],
                 "payee":     self.columns['Název protiúčtu'],
                 "amount":    self.columns['Zaúčtovaná částka'],
@@ -75,9 +74,11 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         StatementLine = super(RaiffeisenCZParser, self).parse_record(line)
 
-        StatementLine.date_user = datetime.strptime(StatementLine.date_user, self.date_format_user)
-
         StatementLine.id = statement.generate_transaction_id(StatementLine)
+
+        # .date_user cannot be parsed by super().parse_record(line) because of different date_format_user
+        if not line[columns["Datum provedení"]] == "":
+            StatementLine.date_user = datetime.strptime(line[columns["Datum provedení"]], self.date_format_user)
 
         if   line[columns["Typ transakce"]].startswith("Převod"):
             StatementLine.trntype = "XFER"
