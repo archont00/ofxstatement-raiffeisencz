@@ -44,6 +44,7 @@ where = ["src"]
 zip-safe = true
 include-package-data = true
 
-# This replaces your MANIFEST.in - README.rst will be included automatically since it's specified as readme
+# This replaces the MANIFEST.in - but it is probably not needed as 
+# README.rst will be included automatically since it's specified as readme
 [tool.setuptools.package-data]
 "*" = ["*.rst"]
