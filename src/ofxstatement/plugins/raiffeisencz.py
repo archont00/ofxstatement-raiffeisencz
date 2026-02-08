@@ -95,8 +95,8 @@ class RaiffeisenCZParser(CsvStatementParser):
         if line[columns["Zaúčtovaná částka"]] == "":
             line[columns["Zaúčtovaná částka"]] = "0"
 
-        if line[columns["Poplatek"]] == "":
-            line[columns["Poplatek"]] = "0"
+        if line[columns["Poplatky"]] == "":
+            line[columns["Poplatky"]] = "0"
 
         StatementLine = super(RaiffeisenCZParser, self).parse_record(line)
 
@@ -163,18 +163,18 @@ class RaiffeisenCZParser(CsvStatementParser):
 
         # It may include thousands separators
         # ToDo: re-use parse_float (how??)
-        line[columns["Poplatek"]] = re.sub(",", ".", line[columns["Poplatek"]])
-        line[columns["Poplatek"]] = re.sub("[ a-zA-Z]", "", line[columns["Poplatek"]])
+        line[columns["Poplatky"]] = re.sub(",", ".", line[columns["Poplatky"]])
+        line[columns["Poplatky"]] = re.sub("[ a-zA-Z]", "", line[columns["Poplatky"]])
 
         # Some type of fee is standalone, not related to transaction amount. Add it to amount field only
-        if float(line[columns["Poplatek"]]) != 0 and StatementLine.amount == 0:
-            StatementLine.amount = float(line[columns["Poplatek"]])
+        if float(line[columns["Poplatky"]]) != 0 and StatementLine.amount == 0:
+            StatementLine.amount = float(line[columns["Poplatky"]])
 
         # Duplicate the current line and replace .amount with the fee amount ["Poplatek"]
-        elif float(line[columns["Poplatek"]]) != 0 and StatementLine.amount != 0:
+        elif float(line[columns["Poplatky"]]) != 0 and StatementLine.amount != 0:
             fee_line = line[:]
-            fee_line[columns["Zaúčtovaná částka"]] = line[columns["Poplatek"]]
-            fee_line[columns["Poplatek"]] = ""
+            fee_line[columns["Zaúčtovaná částka"]] = line[columns["Poplatky"]]
+            fee_line[columns["Poplatky"]] = ""
             fee_line[columns["Typ transakce"]] = "Poplatek"
             fee_line[columns["Zpráva"]] = "Poplatek: " + fee_line[columns["Zpráva"]]
 
