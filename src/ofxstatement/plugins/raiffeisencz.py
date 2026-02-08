@@ -9,12 +9,12 @@ from ofxstatement.plugin import Plugin
 
 
 class RaiffeisenCZPlugin(Plugin):
-    """Raiffeisenbank, a.s. (Czech Republic) (CSV, cp1250)
+    """Raiffeisenbank, a.s. (Czech Republic) (CSV, utf8)
     """
 
     def get_parser(self, filename):
         # Open input file and set some defaults
-        RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'cp1250')
+        RaiffeisenCZPlugin.encoding = self.settings.get('charset', 'utf8')
         f = open(filename, "r", encoding=RaiffeisenCZPlugin.encoding)
         parser = RaiffeisenCZParser(f)
         parser.statement.currency = self.settings.get('currency', 'CZK')
