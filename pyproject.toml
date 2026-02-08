@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ofxstatement-raiffeisencz"
+version = "0.0.7.dev1"
+description = "Ofxstatement plugin for Raiffeisenbank a.s. (Czech Republic) - eKonto CSV history"
+readme = "README.rst"
+license = "GPL-3.0-or-later"
+authors = [
+    {name = "Milan Knížek", email = "milankni@gmail.com"}
+]
+keywords = ["ofx", "banking", "statement"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Natural Language :: English",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "ofxstatement"
+]
+
+[project.urls]
+Homepage = "https://github.com/milankni/ofxstatement-raiffeisencz"
+Repository = "https://github.com/milankni/ofxstatement-raiffeisencz"
+
+[project.entry-points.ofxstatement]
+raiffeisencz = "ofxstatement.plugins.raiffeisencz:RaiffeisenCZPlugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+# Handle namespace packages (modern way)
+[tool.setuptools]
+zip-safe = true
+include-package-data = true
+
+# This replaces the MANIFEST.in - but it is probably not needed as 
+# README.rst will be included automatically since it's specified as readme
+[tool.setuptools.package-data]
+"*" = ["*.rst"]
